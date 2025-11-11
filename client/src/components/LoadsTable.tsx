@@ -12,6 +12,7 @@ export default function LoadsTable() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<number | undefined>(
     undefined
   );
@@ -19,9 +20,18 @@ export default function LoadsTable() {
     undefined
   );
 
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   useEffect(() => {
     fetchData();
-  }, [currentPage, searchTerm, selectedStatus, selectedCarrier]);
+  }, [currentPage, debouncedSearchTerm, selectedStatus, selectedCarrier]);
 
   useEffect(() => {
     fetchFilters();
@@ -34,7 +44,7 @@ export default function LoadsTable() {
       const response = await api.getLoads({
         page: currentPage,
         limit: 10,
-        search: searchTerm || undefined,
+        search: debouncedSearchTerm || undefined,
         status: selectedStatus,
         carrier: selectedCarrier,
       });
@@ -145,6 +155,9 @@ export default function LoadsTable() {
           <input
             type="text"
             placeholder="Search by Load ID, Origin, or Destination..."
+            aria-label="Search by Load ID, Origin, or Destination"
+            aria-describedby="search-description"
+            autoFocus={true}
             value={searchTerm}
             onChange={handleSearchChange}
             className="flex-1 min-w-[250px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
