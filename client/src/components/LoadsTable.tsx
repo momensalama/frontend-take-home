@@ -3,6 +3,19 @@ import { api } from "../services/api";
 import type { Load, Status, Carrier, Pagination } from "../types";
 
 export default function LoadsTable() {
+  // Helper function to read initial state from URL
+  const getInitialStateFromURL = () => {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      page: params.get("page") ? parseInt(params.get("page")!, 10) : 1,
+      search: params.get("search") || "",
+      status: params.get("status") ? parseInt(params.get("status")!, 10) : undefined,
+      carrier: params.get("carrier") ? parseInt(params.get("carrier")!, 10) : undefined,
+    };
+  };
+
+  const initialState = getInitialStateFromURL();
+
   const [loads, setLoads] = useState<Load[]>([]);
   const [statuses, setStatuses] = useState<Status[]>([]);
   const [carriers, setCarriers] = useState<Carrier[]>([]);
@@ -10,14 +23,14 @@ export default function LoadsTable() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(initialState.page);
+  const [searchTerm, setSearchTerm] = useState(initialState.search);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(initialState.search);
   const [selectedStatus, setSelectedStatus] = useState<number | undefined>(
-    undefined
+    initialState.status
   );
   const [selectedCarrier, setSelectedCarrier] = useState<number | undefined>(
-    undefined
+    initialState.carrier
   );
 
   // Debounce search term
@@ -28,6 +41,37 @@ export default function LoadsTable() {
 
     return () => clearTimeout(timer);
   }, [searchTerm]);
+
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    if (currentPage > 1) params.set("page", currentPage.toString());
+    if (debouncedSearchTerm) params.set("search", debouncedSearchTerm);
+    if (selectedStatus) params.set("status", selectedStatus.toString());
+    if (selectedCarrier) params.set("carrier", selectedCarrier.toString());
+
+    const newURL = params.toString()
+      ? `${window.location.pathname}?${params.toString()}`
+      : window.location.pathname;
+
+    window.history.pushState({}, "", newURL);
+  }, [currentPage, debouncedSearchTerm, selectedStatus, selectedCarrier]);
+
+  // Handle browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const state = getInitialStateFromURL();
+      setCurrentPage(state.page);
+      setSearchTerm(state.search);
+      setDebouncedSearchTerm(state.search);
+      setSelectedStatus(state.status);
+      setSelectedCarrier(state.carrier);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -204,6 +248,9 @@ export default function LoadsTable() {
           />
           <select
             value={selectedStatus ?? ""}
+            aria-label="Select Status"
+            aria-describedby="status-description"
+            name="status"
             onChange={handleStatusChange}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
           >
@@ -216,6 +263,9 @@ export default function LoadsTable() {
           </select>
           <select
             value={selectedCarrier ?? ""}
+            aria-label="Select Carrier"
+            aria-describedby="carrier-description"
+            name="carrier"
             onChange={handleCarrierChange}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
           >
