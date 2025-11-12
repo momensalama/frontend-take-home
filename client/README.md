@@ -1,8 +1,4 @@
-# Shipping Loads Client Application
-
-A React-based web application for managing and viewing shipping loads with advanced filtering and pagination capabilities.
-
-## Table of Contents
+# Table of Contents
 
 - [Features](#features)
 - [Technology Stack](#technology-stack)
@@ -11,6 +7,10 @@ A React-based web application for managing and viewing shipping loads with advan
 - [Critical Bug Fixed](#critical-bug-fixed)
 - [Technical Decisions](#technical-decisions)
 - [Future Improvements](#future-improvements)
+
+---
+
+> **Note on Commit Messages:** All commit messages in this repository end with "(This commit message was AI-generated.)" This is because I use VS Code with custom instructions to generate conventional commit messages with AI assistance, rather than writing each commit message manually. This helps maintain consistent commit message formatting throughout the project.
 
 ## Features
 
@@ -63,19 +63,27 @@ A React-based web application for managing and viewing shipping loads with advan
 
 ### Installation & Running
 
-1. **Install dependencies:**
+**Install dependencies:**
 
 ```bash
+cd client
 npm install
-```
-
-2. **Start the development server:**
-
-```bash
 npm run dev
 ```
 
 The application will be available at `http://localhost:5173`
+
+## API Dependencies
+
+This application requires the mock API server to be running at `http://localhost:3001`.
+
+**API Endpoints Used:**
+
+- `GET /api/loads` - Fetch paginated and filtered loads
+- `GET /api/statuses` - Fetch status options
+- `GET /api/carriers` - Fetch carrier options
+
+See the main project README for API setup instructions and documentation.
 
 ## Project Structure
 
@@ -236,14 +244,30 @@ Dedicated `api.ts` service file for all HTTP calls instead of inline fetch opera
 
 Loading states use skeleton screens instead of spinners or text.
 
-## API Dependencies
+## Future Improvements
 
-This application requires the mock API server to be running at `http://localhost:3001`.
+Given more time, here are optimizations and features I would implement:
 
-**API Endpoints Used:**
+### Testing
 
-- `GET /api/loads` - Fetch paginated and filtered loads
-- `GET /api/statuses` - Fetch status options
-- `GET /api/carriers` - Fetch carrier options
+- Unit tests with Vitest and React Testing Library
+- E2E tests with Playwright for critical user flows
+- Test hooks and API service in isolation
 
-See the main project README for API setup instructions and documentation.
+### Performance
+
+- React.memo and useMemo to prevent unnecessary re-renders
+- Request caching with React Query
+
+### Features
+
+- Column sorting (by date, weight, price, etc.)
+- Advanced filters (date range, min/max price/weight, multi-select)
+- Export to CSV/Excel
+- Real-time updates via WebSocket
+
+### Accessibility
+
+- ARIA labels and keyboard navigation
+- WCAG AA color contrast compliance
+- Screen reader testing
