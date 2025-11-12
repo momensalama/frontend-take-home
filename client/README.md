@@ -14,13 +14,13 @@ A React-based web application for managing and viewing shipping loads with advan
 
 ## Features
 
-✅ **Interactive Data Table**
+**Interactive Data Table**
 
 - Display shipping load data with 8 columns: Load ID, Origin, Destination, Status, Date, Weight, Carrier, Price
 - Responsive table design with hover effects
 - Color-coded status badges for visual clarity
 
-✅ **Smart Filtering System**
+**Smart Filtering System**
 
 - Real-time text search across Load ID, Origin, and Destination
 - Debounced search input (500ms) to reduce unnecessary API calls
@@ -29,14 +29,14 @@ A React-based web application for managing and viewing shipping loads with advan
 - Filters work together (AND logic)
 - **URL state persistence** - filters and pagination state are saved in URL for shareable links
 
-✅ **Pagination**
+**Pagination**
 
 - Navigate through loads with Previous/Next buttons
 - Shows current page and total pages
 - 10 items per page
 - Automatic reset to page 1 when filters change
 
-✅ **Enhanced UX**
+**Enhanced UX**
 
 - Loading skeleton screens during data fetch
 - Proper error state handling
@@ -77,46 +77,30 @@ npm run dev
 
 The application will be available at `http://localhost:5173`
 
-3. **Build for production:**
-
-```bash
-npm run build
-```
-
-4. **Preview production build:**
-
-```bash
-npm run preview
-```
-
 ## Project Structure
 
 ```
-client/
-├── src/
-│   ├── components/
-│   │   └── LoadsTable.tsx      # Main table component with all logic
-│   ├── services/
-│   │   └── api.ts              # API service layer with type-safe methods
-│   ├── types/
-│   │   └── index.ts            # TypeScript interfaces and types
-│   ├── App.tsx                 # Root component
-│   ├── main.tsx                # Application entry point
-│   └── index.css               # Global styles with Tailwind directives
-├── public/                      # Static assets
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-└── tailwind.config.js
+src/
+├── components/
+│   ├── LoadsTable.tsx              # Main container
+│   └── LoadsTable/                 # Subcomponents (FilterBar, Table, Pagination, etc.)
+├── hooks/
+│   ├── useDebounce.ts              # Debounce hook
+│   └── useURLState.ts              # URL state sync
+├── services/
+│   └── api.ts                      # API layer
+├── types/
+│   └── index.ts                    # TypeScript interfaces
+└── App.tsx, main.tsx, index.css
 ```
 
 ## Critical Bug Fixed
 
-### 🐛 The Problem: Filter Dropdowns Not Working
+### The Problem: Filter Dropdowns Not Working
 
-During testing, I discovered that the **Status and Carrier filter dropdowns were not working** - selecting any filter would return zero results, even though the data existed.
+During testing, I discovered that the **Status and Carrier filter dropdowns were not working** and selecting any filter would return zero results, even though the data existed.
 
-### 🔍 Debugging Process
+### Debugging Process
 
 1. **Initial Observation:**
 
@@ -145,7 +129,7 @@ During testing, I discovered that the **Status and Carrier filter dropdowns were
    }
    ```
 
-### 💡 The Root Cause
+### The Root Cause
 
 **Type Mismatch in Comparison:**
 
@@ -173,19 +157,19 @@ During testing, I discovered that the **Status and Carrier filter dropdowns were
 
 In JavaScript, the strict inequality operator (`!==`) checks **both value and type**. Since `5943 !== "5943"` is `true`, every record was incorrectly filtered out.
 
-### ✅ The Solution
+### The Solution
 
 Fixed the type coercion issue by parsing the query parameters to integers before comparison:
 
 ```javascript
 // server/server.js (lines 52-58)
 
-// Status filter - convert string to number
+// Status filter and convert string to number
 if (status && load.status !== parseInt(status, 10)) {
   return false;
 }
 
-// Carrier filter - convert string to number
+// Carrier filter and convert string to number
 if (carrier && load.carrier !== parseInt(carrier, 10)) {
   return false;
 }
@@ -197,27 +181,20 @@ if (carrier && load.carrier !== parseInt(carrier, 10)) {
 - The `10` parameter ensures base-10 (decimal) parsing
 - Now both sides of the comparison are numbers: `5943 !== 5943` → `false` (correct!)
 
-### 📊 Impact
+### Impact
 
 **Before Fix:**
 
-- Status filter: ❌ 0 results (always)
-- Carrier filter: ❌ 0 results (always)
+- Status filter: 0 results (always)
+- Carrier filter: 0 results (always)
 
 **After Fix:**
 
-- Status filter: ✅ Returns correct filtered results
-- Carrier filter: ✅ Returns correct filtered results
-- Combined filters: ✅ Works with AND logic as expected
+- Status filter: Returns correct filtered results
+- Carrier filter: Returns correct filtered results
+- Combined filters: Works with AND logic as expected
 
-### 🎓 Key Learnings
-
-1. **HTTP query parameters are always strings** - regardless of what the client sends
-2. **Strict comparison operators (`===`, `!==`) don't perform type coercion** - this is usually good, but requires awareness
-3. **Type safety is critical** - TypeScript on the client helped, but the server needed runtime validation
-4. **Always test the API directly** - using `curl` or Postman helps isolate frontend vs backend issues
-
-### 🔧 Why Fix on Server, Not Client?
+### Why Fix on Server, Not Client?
 
 The fix **must** be on the server because:
 
@@ -228,131 +205,36 @@ The fix **must** be on the server because:
 
 ## Technical Decisions
 
-### 1. **Debounced Search Implementation**
+### 1. **Custom Hooks**
 
-```typescript
-// Custom debounce using useEffect
-const [searchTerm, setSearchTerm] = useState("");
-const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+Created `useDebounce` and `useURLState` hooks to encapsulate complex logic:
 
-useEffect(() => {
-  const timer = setTimeout(() => {
-    setDebouncedSearchTerm(searchTerm);
-  }, 500);
-  return () => clearTimeout(timer);
-}, [searchTerm]);
-```
+- `useDebounce` - Delays API calls to reduce server load (reduces ~100 calls to 1 per search)
+- `useURLState` - Syncs filter state with URL for shareable links and browser navigation
 
-**Rationale:** Reduces API calls from ~50-100 per search phrase to just 1, improving performance and reducing server load.
+**Why:** Separates concerns, improves testability, and enables reusability across the application.
 
-### 2. **Component Architecture**
+### 2. **Modular Component Architecture**
 
-Kept the application in a single `LoadsTable` component rather than splitting into smaller components.
+Split the application into 7 focused components (FilterBar, Table, Pagination, StatusBadge, LoadingSkeleton, ErrorState, EmptyState) plus the main container.
 
-**Rationale:**
+**Why:** Single responsibility principle enables independent testing, easier maintenance, and better scalability. Changes to one component don't affect others.
 
-- Application scope is focused and limited
-- Single component is easier to understand and maintain for this use case
-- No props drilling or state management complexity
-- For larger applications, I would split into: `FilterBar`, `Table`, `Pagination`, `StatusBadge` components
+### 3. **TypeScript for Type Safety**
 
-### 3. **Type Safety with TypeScript**
+Comprehensive TypeScript interfaces for all data structures (Load, Status, Carrier, Pagination, etc.).
 
-Created comprehensive interfaces for all data structures:
-
-```typescript
-interface Load {
-  id: string;
-  origin: string;
-  destination: string;
-  status: number;
-  date: string;
-  weight: number;
-  carrier: number;
-  price: number;
-}
-```
-
-**Rationale:** Catches errors at compile time, provides autocomplete, and serves as documentation.
+**Why:** Catch errors at compile time, provide IDE autocomplete, and serve as self-documenting code.
 
 ### 4. **API Service Layer**
 
-Separated API logic into a dedicated service file rather than inline fetch calls.
+Dedicated `api.ts` service file for all HTTP calls instead of inline fetch operations.
 
-**Rationale:**
+**Why:** Centralized configuration, easier mocking for tests, and single location for error handling or authentication logic.
 
-- Centralized API configuration (base URL)
-- Reusable methods across components
-- Easier to mock for testing
-- Single place to add error handling, retry logic, or authentication
+### 5. **Skeleton Screens**
 
-### 5. **Loading States**
-
-Implemented skeleton screens instead of simple "Loading..." text.
-
-**Rationale:**
-
-- Better perceived performance
-- Maintains layout stability (no content shift)
-- Modern UX pattern users expect
-- Shows structure of incoming content
-
-### 6. **URL State Management**
-
-Implemented URL-based state persistence for all filters and pagination using the native History API.
-
-```typescript
-// Read initial state from URL on mount
-const getInitialStateFromURL = () => {
-  const params = new URLSearchParams(window.location.search);
-  return {
-    page: params.get("page") ? parseInt(params.get("page")!, 10) : 1,
-    search: params.get("search") || "",
-    status: params.get("status") ? parseInt(params.get("status")!, 10) : undefined,
-    carrier: params.get("carrier") ? parseInt(params.get("carrier")!, 10) : undefined,
-  };
-};
-
-// Update URL when filters change
-useEffect(() => {
-  const params = new URLSearchParams();
-  if (currentPage > 1) params.set("page", currentPage.toString());
-  if (debouncedSearchTerm) params.set("search", debouncedSearchTerm);
-  if (selectedStatus) params.set("status", selectedStatus.toString());
-  if (selectedCarrier) params.set("carrier", selectedCarrier.toString());
-
-  const newURL = params.toString()
-    ? `${window.location.pathname}?${params.toString()}`
-    : window.location.pathname;
-
-  window.history.pushState({}, "", newURL);
-}, [currentPage, debouncedSearchTerm, selectedStatus, selectedCarrier]);
-```
-
-**Rationale:**
-
-- **Shareable links** - Users can share filtered views with colleagues
-- **Browser navigation** - Back/forward buttons work as expected
-- **Bookmark-friendly** - Users can bookmark specific filter combinations
-- **No external dependencies** - Uses native browser History API
-- **Persistence** - Filter state survives page refreshes
-- **Professional UX** - Expected behavior in modern web applications
-
-**Benefits:**
-- Example shareable URL: `http://localhost:5173/?status=5943&carrier=7284&search=Los&page=2`
-- Filters are restored when sharing or refreshing the page
-- Search engines can index different filtered views (if made public)
-
-### 7. **State Management**
-
-Used React's built-in `useState` and `useEffect` hooks.
-
-**Rationale:**
-
-- Sufficient for this application's scope
-- No additional dependencies needed
-- Easy to understand and maintain
-- For larger apps, I'd consider Context API, Zustand, or Redux
+Loading states use skeleton screens instead of spinners or text.
 
 ## API Dependencies
 
@@ -365,7 +247,3 @@ This application requires the mock API server to be running at `http://localhost
 - `GET /api/carriers` - Fetch carrier options
 
 See the main project README for API setup instructions and documentation.
-
-## License
-
-This is a take-home assignment project.
