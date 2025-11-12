@@ -83,7 +83,7 @@ The application will be available at `http://localhost:5173`
 src/
 ├── components/
 │   ├── LoadsTable.tsx              # Main container
-│   └── LoadsTable/                 # Subcomponents (FilterBar, Table, Pagination, etc.)
+│   └── LoadsTable                 # Subcomponents (FilterBar, Table, Pagination, etc.)
 ├── hooks/
 │   ├── useDebounce.ts              # Debounce hook
 │   └── useURLState.ts              # URL state sync
